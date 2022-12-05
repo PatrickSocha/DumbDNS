@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/miekg/dns"
@@ -19,7 +20,7 @@ func main() {
 	// start server
 	server := &dns.Server{Addr: ":53", Net: "udp"}
 	log.Printf("Starting DumbDNS (with AdBlock) at %s\n", server.Addr)
-	updateBlockList()
+	go updateBlockList()
 
 	err := server.ListenAndServe()
 	if err != nil {
@@ -47,10 +48,13 @@ func parseQuery(m *dns.Msg) {
 }
 
 func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
+	if strings.Split(w.RemoteAddr().String(), ".")[0] != "10" {
+		w.Close()
+	}
+
 	m := new(dns.Msg)
 	m.SetReply(r)
 	m.Compress = false
-
 	switch r.Opcode {
 	case dns.OpcodeQuery:
 		parseQuery(m)
@@ -64,7 +68,7 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 // then checks if it's still within our TTL (fetches otherwise)
 // then returns
 func getIPs(address string) []string {
-	if _, ok := blockListDatabase[address]; ok {
+	if isBlocked(address) {
 		log.Println("Blocked", address)
 		return []string{"127.0.0.1"}
 	}
@@ -80,6 +84,16 @@ func getIPs(address string) []string {
 	}
 
 	return record.ips
+}
+
+func isBlocked(address string) bool {
+	if _, ok := blockListDatabase[address]; ok {
+		if _, isWhitelisted := whitelistDatabase[address]; isWhitelisted {
+			return false
+		}
+		return true
+	}
+	return false
 }
 
 // QueryAuthority uses 8.8.8.8 to fetch actual DNS data

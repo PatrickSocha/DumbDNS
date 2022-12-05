@@ -9,3 +9,6 @@ type record struct {
 
 var database = map[string]record{}
 var blockListDatabase = map[string]interface{}{}
+var whitelistDatabase = map[string]interface{}{
+	"spclient.wg.spotify.com.": struct{}{},
+}
