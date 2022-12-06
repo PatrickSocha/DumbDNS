@@ -8,8 +8,6 @@ import (
 	"time"
 )
 
-// https://adaway.org/hosts.txt
-//https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
 func updateBlockList() {
 	for {
 		log.Println("Getting block list")
