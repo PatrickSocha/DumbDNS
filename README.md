@@ -19,7 +19,7 @@ I've been running a WireGuard server with DumbDNS on both my laptop and phone fo
 
 ### Getting started (Ubuntu)
 
-Build go binary for your linux system
+Build the Go binary for Linux
 
 ```bash
 GOOS=linux GOARCH=amd64 go build
