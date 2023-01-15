@@ -11,6 +11,8 @@ import (
 func updateBlockList() {
 	for {
 		log.Println("Getting block list")
+
+		mux.Lock()
 		blockListDatabase = make(map[string]interface{})
 
 		for _, s := range blockListSources {
@@ -32,9 +34,13 @@ func updateBlockList() {
 				}
 			}
 		}
+		for k, _ := range whitelistDatabase {
+			delete(blockListDatabase, k)
+		}
+		mux.Unlock()
 
 		log.Printf("Block list updated with %d records\r\n", len(blockListDatabase))
-		time.Sleep(24 * time.Hour)
+		time.Sleep(6 * time.Hour)
 	}
 }
 

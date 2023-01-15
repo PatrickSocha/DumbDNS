@@ -11,13 +11,14 @@ import (
 	"github.com/miekg/dns"
 )
 
-var TTL time.Duration = 5
+// Debugging good to find a blocked domains on mobile.
+// Default is false to preserve privacy.
+var debugging = false
+var TTL time.Duration = 15
 
 func main() {
-	// attach request handler func
 	dns.HandleFunc(".", handleDnsRequest)
 
-	// start server
 	server := &dns.Server{Addr: ":53", Net: "udp"}
 	log.Printf("Starting DumbDNS (with AdBlock) at %s\n", server.Addr)
 	go updateBlockList()
@@ -48,8 +49,11 @@ func parseQuery(m *dns.Msg) {
 }
 
 func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
-	if strings.Split(w.RemoteAddr().String(), ".")[0] != "10" {
+	cleanIP := strings.Split(w.RemoteAddr().String(), ":")
+	ip := net.ParseIP(cleanIP[0])
+	if !(ip.IsPrivate() || ip.IsLoopback()) {
 		w.Close()
+		return
 	}
 
 	m := new(dns.Msg)
@@ -60,7 +64,10 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 		parseQuery(m)
 	}
 
-	w.WriteMsg(m)
+	err := w.WriteMsg(m)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 // getIPs checks if the domain is blocked
@@ -68,12 +75,16 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 // then checks if it's still within our TTL (fetches otherwise)
 // then returns
 func getIPs(address string) []string {
-	if isBlocked(address) {
-		log.Println("Blocked", address)
+	if _, blocked := blockListDatabase[address]; blocked {
+		if debugging {
+			log.Println("blocked", address)
+		}
 		return []string{"127.0.0.1"}
 	}
 
+	mux.RLock()
 	record, ok := database[address]
+	mux.RUnlock()
 	if !ok {
 		r := addToDatabase(address)
 		return r.ips
@@ -86,23 +97,13 @@ func getIPs(address string) []string {
 	return record.ips
 }
 
-func isBlocked(address string) bool {
-	if _, ok := blockListDatabase[address]; ok {
-		if _, isWhitelisted := whitelistDatabase[address]; isWhitelisted {
-			return false
-		}
-		return true
-	}
-	return false
-}
-
-// QueryAuthority uses 8.8.8.8 to fetch actual DNS data
+// QueryAuthority uses 1.1.1.1 to fetch actual DNS data
 func QueryAuthority(address string) []string {
 	r := &net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
 			d := net.Dialer{
-				Timeout: time.Millisecond * time.Duration(10000),
+				Timeout: time.Millisecond * time.Duration(5000),
 			}
 			return d.DialContext(ctx, network, "8.8.8.8:53")
 		},
@@ -119,7 +120,9 @@ func addToDatabase(address string) record {
 		expiresAt: time.Now().Add(TTL * time.Minute),
 		ips:       authorityResponse,
 	}
+	mux.Lock()
 	database[address] = r
+	mux.Unlock()
 
 	return r
 }

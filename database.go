@@ -1,6 +1,9 @@
 package main
 
-import "time"
+import (
+	"sync"
+	"time"
+)
 
 type record struct {
 	expiresAt time.Time
@@ -12,6 +15,7 @@ type sources struct {
 	url   string
 }
 
+var mux = &sync.RWMutex{}
 var database = map[string]record{}
 var blockListDatabase = map[string]interface{}{}
 var blockListSources = []sources{
@@ -31,7 +35,20 @@ var blockListSources = []sources{
 		regex: `0.0.0.0\s+(?P<url>\S+)`,
 		url:   "https://raw.githubusercontent.com/d3ward/toolz/master/src/d3host.txt",
 	},
+	{
+		regex: `(?P<url>\S+)`,
+		url:   "https://blokada.org/blocklists/ddgtrackerradar/standard/hosts.txt",
+	},
+	{
+		regex: `0.0.0.0\s+(?P<url>\S+)`,
+		url:   "https://raw.githubusercontent.com/lightswitch05/hosts/master/docs/lists/ads-and-tracking-extended.txt",
+	},
+	{
+		regex: `0.0.0.0\s+(?P<url>\S+)`,
+		url:   "https://raw.githubusercontent.com/lightswitch05/hosts/master/docs/lists/tracking-aggressive-extended.txt",
+	},
 }
+
 var whitelistDatabase = map[string]interface{}{
-	"spclient.wg.spotify.com.": struct{}{},
+	"spclient.wg.spotify.com.": struct{}{}, // spotify
 }
