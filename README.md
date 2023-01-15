@@ -11,7 +11,8 @@ DumbDNS currently comes with the following features:
 - Block list refreshing
 - White list (bypass any blocked domain)
 - Rejects external IPs
-- Misses out 90% of the DNS spec (:
+- Misses out 99% of the DNS spec (:
+- Only supports A record resolution
 
 ### Use cases
 
