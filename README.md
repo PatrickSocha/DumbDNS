@@ -19,6 +19,12 @@ I've been running a WireGuard server with DumbDNS on both my laptop and phone fo
 
 ### Getting started (Ubuntu)
 
+Build go binary for your linux system
+
+```bash
+GOOS=linux GOARCH=amd64 go build
+```
+
 Stop the system DNS service and free up port 53
 
 ```bash
