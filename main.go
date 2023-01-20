@@ -14,7 +14,8 @@ import (
 // Debugging good to find a blocked domains on mobile.
 // Default is false to preserve privacy.
 var debugging = false
-var TTL time.Duration = 15
+var TTL = 15 * time.Minute
+var refreshFreq = 6 * time.Hour
 
 func main() {
 	dns.HandleFunc(".", handleDnsRequest)
@@ -27,6 +28,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to start server: %s\n ", err.Error())
 	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Recovered. Error:\n", r)
+		}
+	}()
 
 	defer server.Shutdown()
 }
@@ -75,16 +82,19 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 // then checks if it's still within our TTL (fetches otherwise)
 // then returns
 func getIPs(address string) []string {
+	blockMux.RLock()
 	if _, blocked := blockListDatabase[address]; blocked {
 		if debugging {
 			log.Println("blocked", address)
 		}
+		blockMux.RUnlock()
 		return []string{"127.0.0.1"}
 	}
+	blockMux.RUnlock()
 
-	mux.RLock()
+	dbMux.RLock()
 	record, ok := database[address]
-	mux.RUnlock()
+	dbMux.RUnlock()
 	if !ok {
 		r := addToDatabase(address)
 		return r.ips
@@ -120,9 +130,9 @@ func addToDatabase(address string) record {
 		expiresAt: time.Now().Add(TTL * time.Minute),
 		ips:       authorityResponse,
 	}
-	mux.Lock()
+	dbMux.Lock()
 	database[address] = r
-	mux.Unlock()
+	dbMux.Unlock()
 
 	return r
 }

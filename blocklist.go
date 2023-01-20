@@ -11,15 +11,14 @@ import (
 func updateBlockList() {
 	for {
 		log.Println("Getting block list")
-
-		mux.Lock()
+		blockMux.Lock()
 		blockListDatabase = make(map[string]interface{})
 
 		for _, s := range blockListSources {
 			var compRegEx = regexp.MustCompile(s.regex)
 			resp, err := http.Get(s.url)
 			if err != nil {
-				log.Fatalln(err)
+				log.Println("Error:", err)
 			}
 			scanner := bufio.NewScanner(resp.Body)
 
@@ -35,12 +34,24 @@ func updateBlockList() {
 			}
 		}
 		for k, _ := range whitelistDatabase {
-			delete(blockListDatabase, k)
+			structuredDomain := k + "."
+			delete(blockListDatabase, structuredDomain)
 		}
-		mux.Unlock()
-
+		blockMux.Unlock()
 		log.Printf("Block list updated with %d records\r\n", len(blockListDatabase))
-		time.Sleep(6 * time.Hour)
+
+		log.Println("Purging old database records")
+		dbMux.Lock()
+		for k, v := range database {
+			if time.Now().After(v.expiresAt) {
+				structuredDomain := k + "."
+				delete(database, structuredDomain)
+			}
+		}
+		dbMux.Unlock()
+
+		log.Println("Refresh Go routine sleeping")
+		time.Sleep(refreshFreq)
 	}
 }
 

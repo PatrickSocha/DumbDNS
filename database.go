@@ -15,8 +15,9 @@ type sources struct {
 	url   string
 }
 
-var mux = &sync.RWMutex{}
+var dbMux = &sync.RWMutex{}
 var database = map[string]record{}
+var blockMux = &sync.RWMutex{}
 var blockListDatabase = map[string]interface{}{}
 var blockListSources = []sources{
 	{
@@ -50,5 +51,5 @@ var blockListSources = []sources{
 }
 
 var whitelistDatabase = map[string]interface{}{
-	"spclient.wg.spotify.com.": struct{}{}, // spotify
+	"spclient.wg.spotify.com": struct{}{}, // spotify
 }
