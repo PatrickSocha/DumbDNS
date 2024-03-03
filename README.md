@@ -10,13 +10,15 @@ DumbDNS currently comes with the following features:
 - Cached lookups (15 min TTL)
 - Block list refreshing
 - White list (bypass any blocked domain)
+- Fetches DNS over HTTPS, serves as DNS
 - Rejects external IPs
 - Misses out 99% of the DNS spec (:
 - Only supports A record resolution
 
 ### Use cases
 
-I've been running a WireGuard server with DumbDNS on both my laptop and phone for a few months now - and it works great.
+I've been running a WireGuard server with DumbDNS on both my laptop and phone for over a year now - and it works great.
+DumbDNS queries the authority servers via DNS over HTTPS (DoH) and I have configured my WireGuard clients to query DumbDNS via the local WireGuard network. Therefore, the DNS response is tunneled and thus secure.
 
 ### Getting started (Ubuntu)
 
