@@ -1,4 +1,4 @@
-package main
+package database
 
 import (
 	"bufio"
@@ -8,11 +8,11 @@ import (
 	"time"
 )
 
-func updateBlockList() {
+func (db *Database) UpdateBlockList(refreshRate time.Duration) {
 	for {
 		log.Println("Getting block list")
-		blockMux.Lock()
-		blockListDatabase = make(map[string]interface{})
+		db.blockMux.Lock()
+		db.blockListDatabase = make(map[string]interface{})
 
 		for _, s := range blockListSources {
 			var compRegEx = regexp.MustCompile(s.regex)
@@ -26,32 +26,27 @@ func updateBlockList() {
 			for scanner.Scan() {
 				v := getParams(compRegEx, scanner.Text())
 				if v != nil {
-
-					// domains come in as `domain.com.` so we add a `.` to the end so it can be found in the map
-					structuredDomain := *v + "."
-					blockListDatabase[structuredDomain] = struct{}{}
+					db.blockListDatabase[*v] = struct{}{}
 				}
 			}
 		}
-		for k, _ := range whitelistDatabase {
-			structuredDomain := k + "."
-			delete(blockListDatabase, structuredDomain)
+		for domain, _ := range whitelistDatabase {
+			delete(db.blockListDatabase, domain)
 		}
-		blockMux.Unlock()
-		log.Printf("Block list updated with %d records\r\n", len(blockListDatabase))
+		db.blockMux.Unlock()
+		log.Printf("Block list updated with %d records\r\n", len(db.blockListDatabase))
 
 		log.Println("Purging old database records")
-		dbMux.Lock()
-		for k, v := range database {
-			if time.Now().After(v.expiresAt) {
-				structuredDomain := k + "."
-				delete(database, structuredDomain)
+		db.dbMux.Lock()
+		for domain, v := range db.database {
+			if time.Now().After(v.ExpiresAt) {
+				delete(db.database, domain)
 			}
 		}
-		dbMux.Unlock()
+		db.dbMux.Unlock()
 
 		log.Println("Refresh Go routine sleeping")
-		time.Sleep(refreshFreq)
+		time.Sleep(refreshRate)
 	}
 }
 
