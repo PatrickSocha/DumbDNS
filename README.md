@@ -59,7 +59,7 @@ Start the service in the background
 The blocklist has three distinct parts:
 
 - **Block List**: This requires the Go Regex to read the file and return a capture group.
-- **White List**: These are individual URls you would like to allow the server to allow and ignore if found in the blocklist.
+- **White List**: These are individual URLs you would like to allow the server to allow and ignore if found in the blocklist.
 - **Hosts File**: This allows you to create a custom mapping of domain to ip. In the given example, archive.is blocks CloudFlare DNS, so we manually add the mapping to make it work.
 
 You should save this as `dumbdns.json` in the same folder as the executable binary.
