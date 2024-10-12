@@ -1,30 +1,63 @@
 package database
 
-var blockListSources = []sources{
-	{
-		regex: `0.0.0.0\s+(?P<url>\S+)`,
-		url:   "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts",
-	},
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+)
+
+type Sources struct {
+	Regex string `json:"regex"`
+	Url   string `json:"url"`
 }
 
-var whitelistDatabase = map[string]struct{}{
-	"spclient.wg.spotify.com": {}, // spotify
-	"api-partner.spotify.com": {}, // spotify
-	"i.scdn.co":               {}, // spotify
-	"encore.scdn.co":          {}, // spotify
-
-	// core
-	"cdn.jsdelivr.net":                  {},
-	"cdnjs.com":                         {},
-	"unpkg.com":                         {},
-	"cdnjs.cloudflare.com":              {},
-	"downloaddispatch.itunes.apple.com": {}, // app store downloads
-	"xp.apple.com":                      {}, // app store images
-	"gsa.apple.com":                     {}, // sign in with apple
-	"init.push.apple.com":               {}, // apple push / i think apple pay also
+type ConfigJson struct {
+	BlockLists       []Sources         `json:"blockLists"`
+	WhitelistDomains []string          `json:"whiteList"`
+	Hosts            map[string]string `json:"hostsFile"`
 }
 
-var hosts = map[string]string{
-	"archive.ph": "23.137.248.133",
-	"archive.is": "23.137.248.133",
+type Config struct {
+	blocklists       []Sources
+	whitelistDomains map[string]interface{}
+	hosts            map[string]string
+}
+
+func readConfigFromDisk() (*Config, error) {
+	configFile := "dumbdns.json"
+	file, err := os.Open("./" + configFile)
+	if err != nil {
+		exePath, err := os.Executable()
+		if err != nil {
+			log.Fatalf("error getting executable path: %v", err)
+		}
+		wd := filepath.Dir(exePath)
+
+		fullPath := filepath.Join(wd, configFile)
+		file, err = os.Open(fullPath)
+		if err != nil {
+			log.Fatalf("could not open file with full path: %v", err)
+		}
+	}
+	defer file.Close()
+
+	var cj ConfigJson
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&cj)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding JSON: %w", err)
+	}
+
+	domainMap := make(map[string]interface{})
+	for _, domain := range cj.WhitelistDomains {
+		domainMap[domain] = struct{}{}
+	}
+
+	return &Config{
+		blocklists:       cj.BlockLists,
+		whitelistDomains: domainMap,
+		hosts:            cj.Hosts,
+	}, nil
 }

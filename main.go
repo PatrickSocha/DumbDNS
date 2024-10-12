@@ -5,29 +5,32 @@ import (
 	"time"
 
 	"dumbdns/database"
-	dnsClient "dumbdns/dns"
+	dnsServer "dumbdns/dns"
 	"dumbdns/dohClient"
 
 	"github.com/likexian/doh-go"
 )
 
 const (
-	blockListRefreshRate = 24 * time.Hour
-	cacheTTL             = 15 * time.Minute
+	blockListRefreshRate = 2 * time.Hour
+	cacheTTL             = 5 * time.Minute
 )
 
 func main() {
-	dohClient := dohClient.Start(doh.CloudflareProvider, doh.GoogleProvider)
-	defer dohClient.Doh.Close()
+	doh := dohClient.Start(doh.CloudflareProvider, doh.GoogleProvider)
+	defer doh.Doh.Close()
 
 	db := database.Start(cacheTTL)
 	go db.UpdateBlockList(blockListRefreshRate)
 
-	server := dnsClient.Start(dohClient, db)
+	server, err := dnsServer.Start(doh, db)
+	if err != nil {
+		log.Fatalf("Failed to start service: %s\n ", err.Error())
+	}
 
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("Recovered. Error:\n", r)
+			log.Println("recovered error:\n%w", err)
 		}
 	}()
 

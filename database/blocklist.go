@@ -9,14 +9,21 @@ import (
 )
 
 func (db *Database) UpdateBlockList(refreshRate time.Duration) {
+	config, err := readConfigFromDisk()
+	if err != nil {
+		log.Fatalf("error reading config: %v", err)
+		return
+	}
+	db.config = config
+
 	for {
 		log.Println("Getting block list")
 		db.blockMux.Lock()
 		db.blockListDatabase = make(map[string]interface{})
 
-		for _, s := range blockListSources {
-			var compRegEx = regexp.MustCompile(s.regex)
-			resp, err := http.Get(s.url)
+		for _, s := range config.blocklists {
+			var compRegEx = regexp.MustCompile(s.Regex)
+			resp, err := http.Get(s.Url)
 			if err != nil {
 				log.Println("Error:", err)
 			}
@@ -30,7 +37,7 @@ func (db *Database) UpdateBlockList(refreshRate time.Duration) {
 				}
 			}
 		}
-		for domain, _ := range whitelistDatabase {
+		for domain, _ := range config.whitelistDomains {
 			delete(db.blockListDatabase, domain)
 		}
 		db.blockMux.Unlock()

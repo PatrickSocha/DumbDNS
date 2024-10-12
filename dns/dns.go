@@ -2,6 +2,7 @@ package dnsClient
 
 import (
 	"context"
+	"dumbdns/models"
 	"errors"
 	"fmt"
 	"log"
@@ -11,6 +12,8 @@ import (
 
 	"dumbdns/database"
 	"dumbdns/dohClient"
+
+	dohDns "github.com/likexian/doh-go/dns"
 	"github.com/miekg/dns"
 )
 
@@ -22,7 +25,7 @@ type DnsServer struct {
 	refreshFreq time.Duration
 }
 
-func Start(dohClient *dohClient.DohClient, db *database.Database) *DnsServer {
+func Start(dohClient *dohClient.DohClient, db *database.Database) (*DnsServer, error) {
 	d := &DnsServer{
 		dohClient: dohClient,
 		db:        db,
@@ -34,10 +37,10 @@ func Start(dohClient *dohClient.DohClient, db *database.Database) *DnsServer {
 	log.Printf("Starting DumbDNS (with AdBlock) at %s\n", d.DnsServer.Addr)
 	err := d.DnsServer.ListenAndServe()
 	if err != nil {
-		log.Fatalf("Failed to start server: %s\n ", err.Error())
+		return nil, fmt.Errorf("error starting service: %w", err)
 	}
 
-	return d
+	return d, nil
 }
 
 func (d *DnsServer) handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
@@ -61,38 +64,80 @@ func (d *DnsServer) handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 
 	err := w.WriteMsg(m)
 	if err != nil {
-		log.Println(err)
+		fmt.Errorf("error writing response message: %w", err)
 	}
 }
 
 func (d *DnsServer) ParseQuery(ctx context.Context, m *dns.Msg) {
 	for _, q := range m.Question {
+		queryType, err := models.QueryToDoHType(q.Qtype)
+		if err != nil {
+			fmt.Errorf("error getting query type %w", err)
+			return
+		}
+
+		records, err := d.getRecords(ctx, q.Name, queryType)
+		if err != nil {
+			fmt.Errorf("error fetching records: %w", err)
+			return
+		}
+
 		switch q.Qtype {
 		case dns.TypeA:
-			ips := d.getIPs(ctx, q.Name)
-			if len(ips) > 0 {
-				for _, ip := range ips {
-					rr, err := dns.NewRR(fmt.Sprintf("%s A %s", q.Name, ip))
-					if err == nil {
-						m.Answer = append(m.Answer, rr)
-					}
+			for _, v := range records.A {
+				rr, err := dns.NewRR(fmt.Sprintf("%s A %s", q.Name, v))
+				if err != nil {
+					fmt.Errorf("error generating query response: %w ", err)
+					return
 				}
+				m.Answer = append(m.Answer, rr)
 			}
+		case dns.TypeAAAA:
+			for _, v := range records.AAAA {
+				rr, err := dns.NewRR(fmt.Sprintf("%s AAAA %s", q.Name, v))
+				if err != nil {
+					fmt.Errorf("error generating query response: %w ", err)
+					return
+				}
+				m.Answer = append(m.Answer, rr)
+			}
+		case dns.TypeMX:
+			for _, v := range records.MX {
+				rr, err := dns.NewRR(fmt.Sprintf("%s MX %s", q.Name, v))
+				if err != nil {
+					fmt.Errorf("error generating query response: %w ", err)
+					return
+				}
+				m.Answer = append(m.Answer, rr)
+			}
+		case dns.TypeCNAME:
+			if records.CNAME == "" {
+				return
+			}
+			rr, err := dns.NewRR(fmt.Sprintf("%s IN CNAME %s", q.Name, records.CNAME))
+			if err != nil {
+				fmt.Errorf("error generating query response: %w ", err)
+				return
+			}
+			m.Answer = append(m.Answer, rr)
 		}
 	}
 }
 
-func (d *DnsServer) getIPs(ctx context.Context, address string) []string {
-	// remove the "." from the passed in address
+func (d *DnsServer) getRecords(ctx context.Context, address string, queryType dohDns.Type) (*models.Record, error) {
+	// remove the "." from the end of the passed in address (google.com.)
 	address = address[:len(address)-1]
 
-	record, err := d.db.GetRecord(address)
+	record, err := d.db.GetRecord(address, queryType)
 	if errors.Is(err, database.ErrNotFound) {
-		ips := d.dohClient.QueryAuthority(ctx, address)
-		record := d.db.AddRecord(address, ips)
+		resp := d.dohClient.QueryAuthority(ctx, address, queryType)
+		record, err := d.db.AddRecord(address, queryType, resp)
+		if err != nil {
+			return record, fmt.Errorf("error adding record: %w", err)
+		}
 
-		return record.IPs
+		return record, nil
 	}
 
-	return record.IPs
+	return record, nil
 }
