@@ -56,7 +56,7 @@ Start the service in the background
 
 ### Create your blocklist
 
-The blocklist has three distinct parts: the source of blocklists, the whitelist and a custom hosts file
+The blocklist has three distinct parts:
 
 - **Block List**: This requires the Go Regex to read the file and return a capture group.
 - **White List**: These are individual URls you would like to allow the server to allow and ignore if found in the blocklist.
