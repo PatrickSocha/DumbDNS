@@ -131,7 +131,9 @@ func (d *DnsServer) getRecords(ctx context.Context, address string, queryType do
 	record, err := d.db.GetRecord(address, queryType)
 	if errors.Is(err, database.ErrNotFound) {
 		resp := d.dohClient.QueryAuthority(ctx, address, queryType)
-		record, err := d.db.AddRecord(address, queryType, resp)
+
+		now := time.Now().UTC()
+		record, err := d.db.AddRecord(now, address, queryType, resp)
 		if err != nil {
 			return record, fmt.Errorf("error adding record: %w", err)
 		}

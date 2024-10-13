@@ -35,9 +35,6 @@ func Start(ttl time.Duration) *Database {
 }
 
 func (db *Database) GetRecord(address string, queryType dns.Type) (*models.Record, error) {
-	db.blockMux.RLock()
-	defer db.blockMux.RUnlock()
-
 	// Check custom hosts file for host:ip mapping file
 	// e.g: archive.is blocks CloudFlare DNS, so we add
 	// a manual mapping to get around that.
@@ -45,8 +42,10 @@ func (db *Database) GetRecord(address string, queryType dns.Type) (*models.Recor
 		return &models.Record{A: []string{ip}}, nil
 	}
 
+	db.blockMux.RLock()
 	// Check if in block list
 	if _, blocked := db.blockListDatabase[address]; blocked {
+		db.blockMux.RUnlock()
 		return &models.Record{
 			A:     []string{"127.0.0.1"},
 			AAAA:  []string{"::1"},
@@ -56,11 +55,11 @@ func (db *Database) GetRecord(address string, queryType dns.Type) (*models.Recor
 			CNAME: "localhost",
 		}, nil
 	}
+	db.blockMux.RUnlock()
 
 	// Now we can safely lock the database for record checking
 	db.dbMux.RLock()
 	defer db.dbMux.RUnlock()
-
 	if record, ok := db.database[address]; ok {
 		if time.Now().After(record.ExpiresAt) {
 			// Expired record, delete and return not found
@@ -102,7 +101,7 @@ func hasQueryType(r *models.Record, queryType dns.Type) bool {
 	}
 }
 
-func (db *Database) AddRecord(address string, queryType dns.Type, recordValue []string) (*models.Record, error) {
+func (db *Database) AddRecord(now time.Time, address string, queryType dns.Type, recordValue []string) (*models.Record, error) {
 	db.dbMux.RLock()
 	defer db.dbMux.RUnlock()
 	record, ok := db.database[address]
@@ -131,7 +130,7 @@ func (db *Database) AddRecord(address string, queryType dns.Type, recordValue []
 	}
 
 	if record.ExpiresAt.IsZero() {
-		record.ExpiresAt = time.Now().Add(db.TTL)
+		record.ExpiresAt = now.Add(db.TTL)
 	}
 
 	db.database[address] = record
