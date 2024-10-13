@@ -19,6 +19,7 @@ DumbDNS currently comes with the following features:
   - CNAME
   - NS
   - MX (priority set to 10)
+- Limited testing, with aim to add a lot more.
 
 ### Use cases
 
@@ -98,6 +99,7 @@ You should save this as `dumbdns.json` in the same folder as the executable bina
 - ~~IPv6 support~~
 - ~~DNS over HTTPS (DoH)~~
 - A simple way to add domains to the whitelist
+- Testing of critical components
 
 ### Who built this & licenses.
 
