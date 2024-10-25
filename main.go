@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	port                 = ":53"
 	blockListRefreshRate = 2 * time.Hour
 	cacheTTL             = 5 * time.Minute
 )
@@ -23,7 +24,7 @@ func main() {
 	db := database.Start(cacheTTL)
 	go db.UpdateBlockList(blockListRefreshRate)
 
-	server, err := dnsServer.Start(doh, db)
+	server, err := dnsServer.Start(port, doh, db)
 	if err != nil {
 		log.Fatalf("Failed to start service: %s\n ", err.Error())
 	}

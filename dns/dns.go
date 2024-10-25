@@ -25,14 +25,14 @@ type DnsServer struct {
 	refreshFreq time.Duration
 }
 
-func Start(dohClient *dohClient.DohClient, db *database.Database) (*DnsServer, error) {
+func Start(port string, dohClient *dohClient.DohClient, db *database.Database) (*DnsServer, error) {
 	d := &DnsServer{
 		dohClient: dohClient,
 		db:        db,
 	}
 
 	dns.HandleFunc(".", d.handleDnsRequest)
-	d.DnsServer = &dns.Server{Addr: ":53", Net: "udp"}
+	d.DnsServer = &dns.Server{Addr: port, Net: "udp"}
 
 	log.Printf("Starting DumbDNS (with AdBlock) at %s\n", d.DnsServer.Addr)
 	err := d.DnsServer.ListenAndServe()

@@ -23,10 +23,10 @@ func Start(provider ...int) *DohClient {
 func (d *DohClient) QueryAuthority(ctx context.Context, address string, questionQueryType dohDns.Type) []string {
 	dohResp, err := d.Doh.Query(ctx, dohDns.Domain(address), questionQueryType)
 	if err != nil {
-		log.Printf("%s : doh query failed, retrying: %s", address, err.Error())
+		// retry failed lookup
 		dohResp, err = d.Doh.Query(ctx, dohDns.Domain(address), questionQueryType)
 		if err != nil {
-			log.Printf("%s : failed, giving up: %s", address, err.Error())
+			log.Printf("%s : failed to loook up: %s", address, err.Error())
 			return []string{}
 		}
 	}

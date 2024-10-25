@@ -1,10 +1,11 @@
 package database
 
 import (
-	"dumbdns/models"
 	"errors"
 	"sync"
 	"time"
+
+	"dumbdns/models"
 
 	"github.com/likexian/doh-go/dns"
 )
@@ -59,12 +60,12 @@ func (db *Database) GetRecord(address string, queryType dns.Type) (*models.Recor
 
 	// Now we can safely lock the database for record checking
 	db.dbMux.RLock()
-	defer db.dbMux.RUnlock()
-	if record, ok := db.database[address]; ok {
+	record, ok := db.database[address]
+	db.dbMux.RUnlock() // Immediately unlock the read.
+	if ok {
+		// Expired record, delete and return not found
 		if time.Now().After(record.ExpiresAt) {
-			// Expired record, delete and return not found
-			db.dbMux.RUnlock() // Unlock the read lock before locking for delete
-			db.dbMux.Lock()    // Now acquire the write lock
+			db.dbMux.Lock() // Now acquire the write lock
 			delete(db.database, address)
 			db.dbMux.Unlock() // Unlock the write lock after deleting
 			return nil, ErrNotFound
