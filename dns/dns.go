@@ -131,6 +131,9 @@ func (d *DnsServer) getRecords(ctx context.Context, address string, queryType do
 	record, err := d.db.GetRecord(address, queryType)
 	if errors.Is(err, database.ErrNotFound) {
 		resp := d.dohClient.QueryAuthority(ctx, address, queryType)
+		if len(resp) == 0 {
+			return record, fmt.Errorf("no response found")
+		}
 
 		now := time.Now().UTC()
 		record, err := d.db.AddRecord(now, address, queryType, resp)
