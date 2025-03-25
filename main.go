@@ -18,7 +18,7 @@ const (
 )
 
 func main() {
-	doh := dohClient.Start(doh.Quad9Provider)
+	doh := dohClient.Start(doh.CloudflareProvider)
 	defer doh.Doh.Close()
 
 	db := database.Start(cacheTTL)
