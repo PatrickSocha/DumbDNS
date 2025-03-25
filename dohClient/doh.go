@@ -40,8 +40,8 @@ func (d *DohClient) QueryAuthority(ctx context.Context, address string, question
 		// e.g: ipv6.googlg.com returns type 5 (CNAME) and 28 (AAAA) which would break AAAA response
 		responseQueryType, err := models.QueryToDoHType(uint16(answer.Type))
 		if err != nil {
-			log.Printf("error finding doh query type response: %s", err)
-			return []string{}
+			log.Printf("error finding doh query type response for type %d with error %s", answer.Type, err)
+			continue
 		}
 		if responseQueryType != questionQueryType {
 			continue
