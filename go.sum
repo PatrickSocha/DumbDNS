@@ -6,8 +6,8 @@ github.com/likexian/doh-go v0.6.5 h1:i/mCzd0eaRJcBjWJN9k4FgPcsUPsLJHfq5Hr9yxHGMo
 github.com/likexian/doh-go v0.6.5/go.mod h1:I0F+jse/fBlZKLG08UD08ylrmllrFql/rSIi9GVwzDQ=
 github.com/likexian/gokit v0.25.15 h1:QjospM1eXhdMMHwZRpMKKAHY/Wig9wgcREmLtf9NslY=
 github.com/likexian/gokit v0.25.15/go.mod h1:S2QisdsxLEHWeD/XI0QMVeggp+jbxYqUxMvSBil7MRg=
-github.com/miekg/dns v1.1.68 h1:jsSRkNozw7G/mnmXULynzMNIsgY2dHC8LO6U6Ij2JEA=
-github.com/miekg/dns v1.1.68/go.mod h1:fujopn7TB3Pu3JM69XaawiU0wqjpL9/8xGop5UrTPps=
+github.com/miekg/dns v1.1.69 h1:Kb7Y/1Jo+SG+a2GtfoFUfDkG//csdRPwRLkCsxDG9Sc=
+github.com/miekg/dns v1.1.69/go.mod h1:7OyjD9nEba5OkqQ/hB4fy3PIoxafSZJtducccIelz3g=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
