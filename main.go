@@ -8,7 +8,7 @@ import (
 	dnsServer "dumbdns/dns"
 	"dumbdns/dohClient"
 
-	"github.com/likexian/doh-go"
+	dohGo "github.com/likexian/doh-go"
 )
 
 const (
@@ -18,7 +18,7 @@ const (
 )
 
 func main() {
-	doh := dohClient.Start(doh.Quad9Provider, doh.CloudflareProvider)
+	doh := dohClient.Start(dohGo.Quad9Provider, dohGo.CloudflareProvider)
 	defer doh.Doh.Close()
 
 	db := database.Start(cacheTTL)
