@@ -166,6 +166,15 @@ func (d *DnsServer) ParseQuery(ctx context.Context, m *dns.Msg) {
 				}
 				m.Answer = append(m.Answer, rr)
 			}
+		case dns.TypeKX:
+			for _, v := range records.KX {
+				rr, err := dns.NewRR(fmt.Sprintf("%s KX %s", q.Name, v))
+				if err != nil {
+					fmt.Errorf("error generating query response: %w ", err)
+					return
+				}
+				m.Answer = append(m.Answer, rr)
+			}
 		}
 	}
 }

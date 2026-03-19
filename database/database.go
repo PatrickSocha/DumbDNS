@@ -96,6 +96,8 @@ func hasQueryType(r *models.Record, queryType dns.Type) bool {
 		return len(r.MX) > 0
 	case models.TypeSRV:
 		return len(r.SRV) > 0
+	case models.TypeKX:
+		return len(r.KX) > 0
 	case dns.TypeCNAME:
 		return r.CNAME != ""
 	default:
@@ -123,6 +125,8 @@ func (db *Database) AddRecord(now time.Time, address string, queryType dns.Type,
 		record.MX = recordValue
 	case models.TypeSRV:
 		record.SRV = recordValue
+	case models.TypeKX:
+		record.KX = recordValue
 	case dns.TypeCNAME:
 		if len(recordValue) == 1 {
 			record.CNAME = recordValue[0]

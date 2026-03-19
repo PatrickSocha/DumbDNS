@@ -12,6 +12,9 @@ var (
 	// TypeSRV is a custom DNS type for Service Records
 	// Defined here because doh-go doesn't have built-in SRV support
 	TypeSRV = dohDns.Type("SRV")
+	// TypeKX is a custom DNS type for Key eXchange records
+	// Defined here because doh-go doesn't have built-in KX support
+	TypeKX = dohDns.Type("KX")
 )
 
 // QueryToDoHType converts miekg/dns query types to doh-go types
@@ -35,6 +38,8 @@ func QueryToDoHType(t uint16) (dohDns.Type, error) {
 		return dohDns.TypePTR, nil
 	case dns.TypeSRV:
 		return TypeSRV, nil
+	case dns.TypeKX:
+		return TypeKX, nil
 
 	default:
 		return "", errors.New("query type not supported")
@@ -54,4 +59,5 @@ type Record struct {
 	CNAME string
 	SOA   string
 	PTR   []string
+	KX    []string
 }
