@@ -2,11 +2,19 @@ package models
 
 import (
 	"errors"
+	"time"
 
 	dohDns "github.com/likexian/doh-go/dns"
 	"github.com/miekg/dns"
 )
 
+var (
+	// TypeSRV is a custom DNS type for Service Records
+	// Defined here because doh-go doesn't have built-in SRV support
+	TypeSRV = dohDns.Type("SRV")
+)
+
+// QueryToDoHType converts miekg/dns query types to doh-go types
 func QueryToDoHType(t uint16) (dohDns.Type, error) {
 	switch t {
 	case dns.TypeA:
@@ -25,8 +33,25 @@ func QueryToDoHType(t uint16) (dohDns.Type, error) {
 		return dohDns.TypeSOA, nil
 	case dns.TypePTR:
 		return dohDns.TypePTR, nil
+	case dns.TypeSRV:
+		return TypeSRV, nil
 
 	default:
 		return "", errors.New("query type not supported")
 	}
+}
+
+// Record represents a DNS record with multiple supported types
+type Record struct {
+	ExpiresAt time.Time
+
+	A     []string
+	AAAA  []string
+	NS    []string
+	MX    []string
+	SRV   []string
+	TXT   []string
+	CNAME string
+	SOA   string
+	PTR   []string
 }

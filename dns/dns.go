@@ -157,6 +157,15 @@ func (d *DnsServer) ParseQuery(ctx context.Context, m *dns.Msg) {
 				}
 				m.Answer = append(m.Answer, rr)
 			}
+		case dns.TypeSRV:
+			for _, v := range records.SRV {
+				rr, err := dns.NewRR(fmt.Sprintf("%s SRV %s", q.Name, v))
+				if err != nil {
+					fmt.Errorf("error generating query response: %w ", err)
+					return
+				}
+				m.Answer = append(m.Answer, rr)
+			}
 		}
 	}
 }
