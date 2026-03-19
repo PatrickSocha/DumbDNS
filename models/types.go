@@ -1,7 +1,7 @@
 package models
 
 import (
-	"errors"
+	"fmt"
 	"time"
 
 	dohDns "github.com/likexian/doh-go/dns"
@@ -42,7 +42,7 @@ func QueryToDoHType(t uint16) (dohDns.Type, error) {
 		return TypeKX, nil
 
 	default:
-		return "", errors.New("query type not supported")
+		return "", fmt.Errorf("query type not supported: %s", dns.Type(t).String())
 	}
 }
 
