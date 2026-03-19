@@ -14,14 +14,14 @@ func (db *Database) UpdateBlockList(refreshRate time.Duration) {
 		log.Fatalf("error reading config: %v", err)
 		return
 	}
-	db.config = config
+	db.Config = config
 
 	for {
 		log.Println("Getting block list")
 		db.blockMux.Lock()
 		db.blockListDatabase = make(map[string]interface{})
 
-		for _, s := range config.blocklists {
+		for _, s := range config.Blocklists {
 			var compRegEx = regexp.MustCompile(s.Regex)
 			resp, err := http.Get(s.Url)
 			if err != nil {
@@ -37,7 +37,7 @@ func (db *Database) UpdateBlockList(refreshRate time.Duration) {
 				}
 			}
 		}
-		for domain, _ := range config.whitelistDomains {
+		for domain, _ := range config.WhitelistDomains {
 			delete(db.blockListDatabase, domain)
 		}
 		db.blockMux.Unlock()

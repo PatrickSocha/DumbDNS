@@ -120,6 +120,43 @@ func (d *DnsServer) ParseQuery(ctx context.Context, m *dns.Msg) {
 				return
 			}
 			m.Answer = append(m.Answer, rr)
+		case dns.TypeNS:
+			for _, v := range records.NS {
+				rr, err := dns.NewRR(fmt.Sprintf("%s NS %s", q.Name, v))
+				if err != nil {
+					fmt.Errorf("error generating query response: %w ", err)
+					return
+				}
+				m.Answer = append(m.Answer, rr)
+			}
+		case dns.TypeTXT:
+			for _, v := range records.TXT {
+				rr, err := dns.NewRR(fmt.Sprintf("%s TXT %s", q.Name, v))
+				if err != nil {
+					fmt.Errorf("error generating query response: %w ", err)
+					return
+				}
+				m.Answer = append(m.Answer, rr)
+			}
+		case dns.TypeSOA:
+			if records.SOA == "" {
+				return
+			}
+			rr, err := dns.NewRR(fmt.Sprintf("%s SOA %s", q.Name, records.SOA))
+			if err != nil {
+				fmt.Errorf("error generating query response: %w ", err)
+				return
+			}
+			m.Answer = append(m.Answer, rr)
+		case dns.TypePTR:
+			for _, v := range records.PTR {
+				rr, err := dns.NewRR(fmt.Sprintf("%s PTR %s", q.Name, v))
+				if err != nil {
+					fmt.Errorf("error generating query response: %w ", err)
+					return
+				}
+				m.Answer = append(m.Answer, rr)
+			}
 		}
 	}
 }

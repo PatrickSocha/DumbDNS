@@ -17,10 +17,11 @@ var (
 type Database struct {
 	TTL               time.Duration
 	database          map[string]*models.Record
-	config            *Config
 	dbMux             *sync.RWMutex
 	blockMux          *sync.RWMutex
 	blockListDatabase map[string]interface{}
+
+	Config *models.Config
 }
 
 func Start(ttl time.Duration) *Database {
@@ -39,7 +40,7 @@ func (db *Database) GetRecord(address string, queryType dns.Type) (*models.Recor
 	// Check custom hosts file for host:ip mapping file
 	// e.g: archive.is blocks CloudFlare DNS, so we add
 	// a manual mapping to get around that.
-	if ip, ok := db.config.hosts[address]; ok {
+	if ip, ok := db.Config.Hosts[address]; ok {
 		return &models.Record{A: []string{ip}}, nil
 	}
 

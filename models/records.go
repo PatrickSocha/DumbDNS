@@ -10,5 +10,8 @@ type Record struct {
 	NS    []string
 	MX    []string
 	SRV   []string
+	TXT   []string
 	CNAME string
+	SOA   string
+	PTR   []string
 }

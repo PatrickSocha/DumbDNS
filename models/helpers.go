@@ -19,8 +19,12 @@ func QueryToDoHType(t uint16) (dohDns.Type, error) {
 		return dohDns.TypeCNAME, nil
 	case dns.TypeNS:
 		return dohDns.TypeNS, nil
-	//case dns.TypeSRV:
-	//	return dohDns.TypeSRV
+	case dns.TypeTXT:
+		return dohDns.TypeTXT, nil
+	case dns.TypeSOA:
+		return dohDns.TypeSOA, nil
+	case dns.TypePTR:
+		return dohDns.TypePTR, nil
 
 	default:
 		return "", errors.New("query type not supported")
