@@ -26,7 +26,6 @@ func (d *DohClient) QueryAuthority(ctx context.Context, address string, question
 		// retry failed lookup
 		dohResp, err = d.Doh.Query(ctx, dohDns.Domain(address), questionQueryType)
 		if err != nil {
-			log.Printf("%s : failed to loook up: %s", address, err.Error())
 			return []string{}
 		}
 	}

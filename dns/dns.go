@@ -72,14 +72,16 @@ func (d *DnsServer) ParseQuery(ctx context.Context, m *dns.Msg) {
 	for _, q := range m.Question {
 		queryType, err := models.QueryToDoHType(q.Qtype)
 		if err != nil {
-			fmt.Errorf("error getting query type %w", err)
-			return
+			log.Printf("error getting query type: %v", err)
+			m.SetRcode(m, dns.RcodeServerFailure)
+			continue
 		}
 
 		records, err := d.getRecords(ctx, q.Name, queryType)
 		if err != nil {
-			fmt.Errorf("error fetching records: %w", err)
-			return
+			log.Printf("error fetching records for %s: %v", q.Name, err)
+			m.SetRcode(m, dns.RcodeServerFailure)
+			continue
 		}
 
 		switch q.Qtype {
@@ -87,8 +89,8 @@ func (d *DnsServer) ParseQuery(ctx context.Context, m *dns.Msg) {
 			for _, v := range records.A {
 				rr, err := dns.NewRR(fmt.Sprintf("%s A %s", q.Name, v))
 				if err != nil {
-					fmt.Errorf("error generating query response: %w ", err)
-					return
+					log.Printf("error generating A record: %v", err)
+					continue
 				}
 				m.Answer = append(m.Answer, rr)
 			}
@@ -96,8 +98,8 @@ func (d *DnsServer) ParseQuery(ctx context.Context, m *dns.Msg) {
 			for _, v := range records.AAAA {
 				rr, err := dns.NewRR(fmt.Sprintf("%s AAAA %s", q.Name, v))
 				if err != nil {
-					fmt.Errorf("error generating query response: %w ", err)
-					return
+					log.Printf("error generating AAAA record: %v", err)
+					continue
 				}
 				m.Answer = append(m.Answer, rr)
 			}
@@ -105,27 +107,27 @@ func (d *DnsServer) ParseQuery(ctx context.Context, m *dns.Msg) {
 			for _, v := range records.MX {
 				rr, err := dns.NewRR(fmt.Sprintf("%s MX %s", q.Name, v))
 				if err != nil {
-					fmt.Errorf("error generating query response: %w ", err)
-					return
+					log.Printf("error generating MX record: %v", err)
+					continue
 				}
 				m.Answer = append(m.Answer, rr)
 			}
 		case dns.TypeCNAME:
 			if records.CNAME == "" {
-				return
+				continue
 			}
 			rr, err := dns.NewRR(fmt.Sprintf("%s IN CNAME %s", q.Name, records.CNAME))
 			if err != nil {
-				fmt.Errorf("error generating query response: %w ", err)
-				return
+				log.Printf("error generating CNAME record: %v", err)
+				continue
 			}
 			m.Answer = append(m.Answer, rr)
 		case dns.TypeNS:
 			for _, v := range records.NS {
 				rr, err := dns.NewRR(fmt.Sprintf("%s NS %s", q.Name, v))
 				if err != nil {
-					fmt.Errorf("error generating query response: %w ", err)
-					return
+					log.Printf("error generating NS record: %v", err)
+					continue
 				}
 				m.Answer = append(m.Answer, rr)
 			}
@@ -133,27 +135,27 @@ func (d *DnsServer) ParseQuery(ctx context.Context, m *dns.Msg) {
 			for _, v := range records.TXT {
 				rr, err := dns.NewRR(fmt.Sprintf("%s TXT %s", q.Name, v))
 				if err != nil {
-					fmt.Errorf("error generating query response: %w ", err)
-					return
+					log.Printf("error generating TXT record: %v", err)
+					continue
 				}
 				m.Answer = append(m.Answer, rr)
 			}
 		case dns.TypeSOA:
 			if records.SOA == "" {
-				return
+				continue
 			}
 			rr, err := dns.NewRR(fmt.Sprintf("%s SOA %s", q.Name, records.SOA))
 			if err != nil {
-				fmt.Errorf("error generating query response: %w ", err)
-				return
+				log.Printf("error generating SOA record: %v", err)
+				continue
 			}
 			m.Answer = append(m.Answer, rr)
 		case dns.TypePTR:
 			for _, v := range records.PTR {
 				rr, err := dns.NewRR(fmt.Sprintf("%s PTR %s", q.Name, v))
 				if err != nil {
-					fmt.Errorf("error generating query response: %w ", err)
-					return
+					log.Printf("error generating PTR record: %v", err)
+					continue
 				}
 				m.Answer = append(m.Answer, rr)
 			}
@@ -161,8 +163,8 @@ func (d *DnsServer) ParseQuery(ctx context.Context, m *dns.Msg) {
 			for _, v := range records.SRV {
 				rr, err := dns.NewRR(fmt.Sprintf("%s SRV %s", q.Name, v))
 				if err != nil {
-					fmt.Errorf("error generating query response: %w ", err)
-					return
+					log.Printf("error generating SRV record for %s with data %q: %v", q.Name, v, err)
+					continue
 				}
 				m.Answer = append(m.Answer, rr)
 			}
@@ -170,8 +172,8 @@ func (d *DnsServer) ParseQuery(ctx context.Context, m *dns.Msg) {
 			for _, v := range records.KX {
 				rr, err := dns.NewRR(fmt.Sprintf("%s KX %s", q.Name, v))
 				if err != nil {
-					fmt.Errorf("error generating query response: %w ", err)
-					return
+					log.Printf("error generating KX record: %v", err)
+					continue
 				}
 				m.Answer = append(m.Answer, rr)
 			}
